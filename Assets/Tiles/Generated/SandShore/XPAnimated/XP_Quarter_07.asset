@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13b75c95f34a00d4e8c04f76b73312e6, type: 3}
+  m_Name: XP_Quarter_07
+  m_EditorClassIdentifier: Unity.2D.Tilemap.Extras::UnityEngine.Tilemaps.AnimatedTile
+  m_AnimatedSprites:
+  - {fileID: -1899163289, guid: 2a0e2b7fed5bc4c42af2195fedacc2e9, type: 3}
+  - {fileID: 26127250, guid: 2a0e2b7fed5bc4c42af2195fedacc2e9, type: 3}
+  - {fileID: -531124309, guid: 2a0e2b7fed5bc4c42af2195fedacc2e9, type: 3}
+  - {fileID: 1678810866, guid: 2a0e2b7fed5bc4c42af2195fedacc2e9, type: 3}
+  - {fileID: -1907886388, guid: 2a0e2b7fed5bc4c42af2195fedacc2e9, type: 3}
+  - {fileID: 1031945903, guid: 2a0e2b7fed5bc4c42af2195fedacc2e9, type: 3}
+  - {fileID: 805954177, guid: 2a0e2b7fed5bc4c42af2195fedacc2e9, type: 3}
+  - {fileID: 1312439971, guid: 2a0e2b7fed5bc4c42af2195fedacc2e9, type: 3}
+  m_MinSpeed: 1
+  m_MaxSpeed: 1
+  m_AnimationStartTime: 0
+  m_AnimationStartFrame: 0
+  m_TileColliderType: 0
+  m_TileAnimationFlags: 0
