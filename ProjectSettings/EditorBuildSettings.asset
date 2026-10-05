@@ -6,8 +6,17 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/core_gameplay.unity
+    path: Assets/Core/Scenes/CoreGameplay.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Features/Breathing/Scenes/BreathingMinigame.unity
+    guid: 3b3fb1a37fd9a8d49bd1c9e183ac89a6
+  - enabled: 1
+    path: Assets/Features/Exercise/Scenes/ExerciseMinigame.unity
+    guid: a6e6d9b2f0d28494eac051577972f652
+  - enabled: 1
+    path: Assets/Features/Diet/Scenes/DietMinigame.unity
+    guid: 7c6acd2309db78448991854b754d4311
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0
