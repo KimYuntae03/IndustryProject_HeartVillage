@@ -3,23 +3,8 @@ using UnityEngine.SceneManagement;
 
 public class SceneLoader : MonoBehaviour
 {
-    public void LoadCoreGameplay()
+    public void LoadScene(string sceneName)
     {
-        SceneManager.LoadScene("CoreGameplay");
-    }
-
-    public void LoadBreathingMinigame()
-    {
-        SceneManager.LoadScene("BreathingMinigame");
-    }
-
-    public void LoadDietMinigame()
-    {
-        SceneManager.LoadScene("DietMinigame");
-    }
-
-    public void LoadExerciseMinigame()
-    {
-        SceneManager.LoadScene("ExerciseMinigame");
+        SceneManager.LoadScene(sceneName);
     }
 }
