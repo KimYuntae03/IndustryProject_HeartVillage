@@ -56,7 +56,7 @@ TextureImporter:
   lightmap: 0
   compressionQuality: 50
   spriteMode: 2
-  spriteExtrude: 0
+  spriteExtrude: 1
   spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
@@ -138,7 +138,7 @@ TextureImporter:
       tessellationDetail: 0
       bones: []
       spriteID: 2145b993131a3a14e95c967fd6a27f80
-      internalID: 603717327
+      internalID: -833230880
       vertices: []
       indices: 
       edges: []
@@ -160,7 +160,7 @@ TextureImporter:
       tessellationDetail: 0
       bones: []
       spriteID: 8daadd2071c19a641897c854421dcf3c
-      internalID: 1143725742
+      internalID: 543035038
       vertices: []
       indices: 
       edges: []
@@ -182,7 +182,7 @@ TextureImporter:
       tessellationDetail: 0
       bones: []
       spriteID: 4cb9cb2268e81f34fadb26aaf0edbeb8
-      internalID: -787339241
+      internalID: -795796562
       vertices: []
       indices: 
       edges: []
@@ -204,7 +204,7 @@ TextureImporter:
       tessellationDetail: 0
       bones: []
       spriteID: ab0e6eb269fe65842bdd9c7626c3150d
-      internalID: -417918799
+      internalID: -1836383348
       vertices: []
       indices: 
       edges: []
@@ -226,7 +226,7 @@ TextureImporter:
       tessellationDetail: 0
       bones: []
       spriteID: 92270f4a919a79f4b8f86666781868cf
-      internalID: -1522336645
+      internalID: 948005292
       vertices: []
       indices: 
       edges: []
@@ -248,7 +248,7 @@ TextureImporter:
       tessellationDetail: 0
       bones: []
       spriteID: 7f63dd50377bf0243a004176a23a363d
-      internalID: 773605884
+      internalID: 1137446613
       vertices: []
       indices: 
       edges: []
@@ -270,7 +270,7 @@ TextureImporter:
       tessellationDetail: 0
       bones: []
       spriteID: 1de6ae041c5730f4c8ffcb4316430f02
-      internalID: 2122521910
+      internalID: -1513019583
       vertices: []
       indices: 
       edges: []
@@ -292,7 +292,7 @@ TextureImporter:
       tessellationDetail: 0
       bones: []
       spriteID: b6caa9f7b12a1af4cb1d03c1063faf50
-      internalID: -630088927
+      internalID: -1755296360
       vertices: []
       indices: 
       edges: []
@@ -301,7 +301,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 4cea5f010b92f4841b44e0c42ffedee5
+    spriteID: 3c6a89e38eb25c840a53b8c1c74fe468
     internalID: 0
     vertices: []
     indices: 
@@ -311,18 +311,14 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Ballonbox1_Game_0: 5645550760222220278
-      Ballonbox1_Game_1: 7375438632423052346
-      Ballonbox1_Game_2: -2825747910797274196
-      Ballonbox1_Game_3: -1443583427234883482
-      Ballonbox1_Lower_0: 603717327
-      Ballonbox1_Lower_1: -787339241
-      Ballonbox1_Lower_2: -1522336645
-      Ballonbox1_Lower_3: 2122521910
-      Ballonbox1_Upper_0: 1143725742
-      Ballonbox1_Upper_1: -417918799
-      Ballonbox1_Upper_2: 773605884
-      Ballonbox1_Upper_3: -630088927
+      Ballonbox1_Lower_0: -833230880
+      Ballonbox1_Lower_1: -795796562
+      Ballonbox1_Lower_2: 948005292
+      Ballonbox1_Lower_3: -1513019583
+      Ballonbox1_Upper_0: 543035038
+      Ballonbox1_Upper_1: -1836383348
+      Ballonbox1_Upper_2: 1137446613
+      Ballonbox1_Upper_3: -1755296360
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
