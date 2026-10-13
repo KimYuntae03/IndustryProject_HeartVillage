@@ -21327,7 +21327,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraFollow
   target: {fileID: 695404134}
   offset: {x: 0, y: 0, z: -10}
-  smoothTime: 0.15
+  smoothTime: 0.1
 --- !u!1001 &525378575
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22909,7 +22909,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2d810a496a698342ac22265dbbfd9a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  moveSpeed: 5
+  moveSpeed: 2
 --- !u!114 &695404136
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -498287,6 +498287,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MinigamePopup
   popupWindow: {fileID: 386136718}
   sceneLoader: {fileID: 2111662779}
+  playerController: {fileID: 695404135}
 --- !u!114 &1459229958
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -498304,6 +498305,9 @@ MonoBehaviour:
   inventoryCanvasGroup: {fileID: 580113214}
   animationDuration: 0.2
   closedScale: 0.85
+  mainCamera: {fileID: 519420031}
+  inventoryCameraSize: 1.5
+  zoomSpeed: 6
 --- !u!114 &1459229959
 MonoBehaviour:
   m_ObjectHideFlags: 0

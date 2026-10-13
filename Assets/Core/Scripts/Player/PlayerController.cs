@@ -21,6 +21,8 @@ public class PlayerController : MonoBehaviour
     // 이동을 멈춘 뒤에도 Idle 방향을 유지하기 위한 마지막 방향
     private Vector2 lastMoveDirection = Vector2.down;
 
+    private bool canMove = true; //이동을 막기위한 변수
+
     // 문자열 오타와 매 프레임 문자열 검색을 피하기 위한 Animator 파라미터 해시
     private static readonly int MoveXHash = Animator.StringToHash("MoveX");
     private static readonly int MoveYHash = Animator.StringToHash("MoveY");
@@ -61,6 +63,12 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
+        if (!canMove)
+        {
+            moveInput = Vector2.zero;
+            return;
+        }
+
         Vector2 rawInput = context.ReadValue<Vector2>();
 
         // 대각선 입력의 길이를 1로 제한해 직선 이동보다 빨라지지 않게 함
@@ -74,9 +82,27 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        // 팝업이 열려 있으면 이동하지 않음
+        if (!canMove)
+        {
+            return;
+        }
+
         // Rigidbody2D 이동은 물리 프레임에서 처리
         Vector2 nextPosition = rb.position + moveInput * moveSpeed * Time.fixedDeltaTime;
         rb.MovePosition(nextPosition);
+    }
+    
+    public void SetCanMove(bool value)
+    {
+        canMove = value;
+
+        // 이동을 막는 순간 기존 방향키 입력을 제거
+        if (!canMove)
+        {
+            moveInput = Vector2.zero;
+            animator.SetFloat(SpeedHash, 0f);
+        }
     }
 
     private void UpdateAnimation()
