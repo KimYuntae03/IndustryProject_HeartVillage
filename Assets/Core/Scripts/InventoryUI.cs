@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class InventoryUI : MonoBehaviour
 {
@@ -12,6 +13,15 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private float animationDuration = 0.2f;
     [SerializeField] private float closedScale = 0.85f;
 
+    //인벤토리를 열 때 카메라 줌 효과를 받기위한 컴포넌트 참조 변수들
+    [Header("카메라 줌")]
+    [SerializeField] private Camera mainCamera;
+    [SerializeField] private float inventoryCameraSize = 3.5f;//줌 인 될 카메라 크기
+    [SerializeField] private float zoomSpeed = 6f; 
+
+    private float normalCameraSize;
+    private float targetCameraSize;
+
     private bool isOpen;
     private Coroutine animationCoroutine;
 
@@ -22,8 +32,30 @@ public class InventoryUI : MonoBehaviour
 
         inventoryPanel.localScale = Vector3.one;
         inventoryCanvasGroup.alpha = 1f;
-
         inventoryRoot.SetActive(false);
+
+        //인스펙터에서 카메라 등록이 안되었다면 메인카메라 태그가 설정된 카메라를 가져옴
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+        }
+
+        //인벤토리 닫을 복구할 때 원래 카메라 크기 저장
+        if (mainCamera != null)
+        {
+            normalCameraSize = mainCamera.orthographicSize;
+            targetCameraSize = normalCameraSize;
+        }
+
+    }
+
+    private void Update()
+    {
+        mainCamera.orthographicSize = Mathf.Lerp(
+            mainCamera.orthographicSize,
+            targetCameraSize,
+            zoomSpeed * Time.unscaledDeltaTime
+        );
     }
 
     public void ToggleInventory()
@@ -36,6 +68,12 @@ public class InventoryUI : MonoBehaviour
         else//닫혀있으면 열고
         {
             OpenInventory();
+        }
+
+        //클릭한 버튼의 선택 상태를 해제함.(엔터키로 다시 열리거나 닫히는 현상 방지)
+        if (EventSystem.current != null)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
         }
     }
 
@@ -53,6 +91,8 @@ public class InventoryUI : MonoBehaviour
         animationCoroutine = StartCoroutine(
             AnimateInventory(true)
         );
+
+        targetCameraSize = inventoryCameraSize;
     }
 
     public void CloseInventory()
@@ -73,6 +113,8 @@ public class InventoryUI : MonoBehaviour
         animationCoroutine = StartCoroutine(
             AnimateInventory(false)
         );
+
+        targetCameraSize = normalCameraSize;
     }
 
     //인벤토리가 열리고 닫힐때 애니메이션

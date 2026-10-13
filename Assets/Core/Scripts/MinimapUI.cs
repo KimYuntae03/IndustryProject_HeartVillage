@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class MinimapUI : MonoBehaviour
 {
@@ -20,6 +21,12 @@ public class MinimapUI : MonoBehaviour
     {
         // 현재 상태의 반대로 변경
         SetMinimapVisible(!isVisible);
+
+        //클릭한 미니뱀 버튼의 선택 상태 해제
+        if (EventSystem.current != null)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+        }
     }
 
     private void SetMinimapVisible(bool visible)
