@@ -1045,7 +1045,7 @@ MonoBehaviour:
   target: {fileID: 1880847188}
   followSmoothTime: 0.15
   startSize: 2
-  targetSize: 1.5
+  targetSize: 2
   zoomSpeed: 1
 --- !u!114 &1030035652
 MonoBehaviour:
@@ -1137,7 +1137,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExerciseDistanceTracker
   distanceText: {fileID: 2077484538}
-  stepLengthMeters: 0.7
+  strideLengthMeters: 0.7
 --- !u!114 &1125894218
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2007,8 +2007,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExerciseRouteMover
   routeRoot: {fileID: 909994338}
-  moveSpeed: 1.5
+  distanceTracker: {fileID: 1125894217}
+  worldUnitsPerMeter: 0.1
+  moveSpeed: 0.5
   loopRoute: 1
+  walkAnimationHoldTime: 2
 --- !u!4 &1880847188 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1416375393638256573, guid: e0cbdbd81df7185418aa333e6fc41bb2, type: 3}

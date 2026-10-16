@@ -1,90 +1,166 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-//스마트폰의 걸음 수 센서를 이용해 미니게임 시작 후 이동한 예상 거리를 계산하고 표시
+#if UNITY_ANDROID
+using UnityEngine.Android;
+#endif
+
 public class ExerciseDistanceTracker : MonoBehaviour
 {
-    [Header("UI")] //UI에 업데이트
+    [Header("UI")]
     [SerializeField] private TMP_Text distanceText;
 
-    [Header("거리 계산")]//임시로 0.7m로 가정.
+    [Header("거리 계산")]
     [SerializeField, Min(0.1f)]
-    private float stepLengthMeters = 0.7f;
+    private float strideLengthMeters = 0.7f;
 
-     // 스마트폰에서 제공하는 걸음 수 센서
     private StepCounter stepCounter;
+    private Coroutine prepareCoroutine;
 
-    // 기기 재부팅 이후의 누적 걸음 수 중
-    // 미니게임을 시작한 시점의 값을 저장
+    // 미니게임 측정을 시작한 순간의 누적 걸음 수
     private int startStepCount;
 
     private bool isMeasuring;
+    private bool sensorReady;
 
-    public int SessionStepCount { get; private set; } // 미니게임 시작 이후 측정된 걸음 수
-    public float DistanceMeters { get; private set; } // 걸음 수와 한 걸음 길이로 계산한 이동 거리
+#if UNITY_ANDROID && !UNITY_EDITOR
+    private const string ActivityPermission =
+        "android.permission.ACTIVITY_RECOGNITION";
+
+    private PermissionCallbacks permissionCallbacks;
+#endif
+
+    public int SessionStepCount { get; private set; }
+    public float DistanceMeters { get; private set; }
+    public bool IsMeasuring => isMeasuring;
+    public bool SensorReady => sensorReady;
 
     private void OnEnable()
     {
-        PrepareStepCounter();
-        UpdateDistanceText();
+        isMeasuring = false;
+        sensorReady = false;
+
+        SessionStepCount = 0;
+        DistanceMeters = 0f;
+
+        RequestPermissionAndPrepareSensor();
     }
 
     private void Update()
     {
-        // 측정 시작 전이거나 센서가 없다면 거리 계산을 하지 않음
-        if (!isMeasuring || stepCounter == null)
+        if (!isMeasuring || !sensorReady || stepCounter == null)
         {
             return;
         }
 
-        // 현재 기기의 전체 누적 걸음 수
+        // Android 기기가 기록한 현재 누적 걸음 수
         int currentStepCount =
             stepCounter.stepCounter.ReadValue();
 
-        // 미니게임 시작 이후에 걸은 걸음 수만 계산
+        // 미니게임 시작 이후 걸은 걸음 수만 계산
         SessionStepCount = Mathf.Max(
             0,
             currentStepCount - startStepCount
         );
 
-        // 걸음 수에 평균 보폭을 곱해 이동 거리를 계산
+        // 걸음 수 × 평균 보폭으로 실제 이동 거리 계산
         DistanceMeters =
-            SessionStepCount * stepLengthMeters;
+            SessionStepCount * strideLengthMeters;
 
         UpdateDistanceText();
     }
 
-    private bool PrepareStepCounter()
+    private void RequestPermissionAndPrepareSensor()
     {
-        if (stepCounter == null)
+#if UNITY_ANDROID && !UNITY_EDITOR
+        // Android 10 이상에서 걸음 수 센서를 사용하기 위한 권한
+        if (!Permission.HasUserAuthorizedPermission(ActivityPermission))
+        {
+            distanceText.text = "신체 활동 권한이 필요합니다.";
+
+            permissionCallbacks = new PermissionCallbacks();
+            permissionCallbacks.PermissionGranted += OnPermissionGranted;
+            permissionCallbacks.PermissionDenied += OnPermissionDenied;
+            permissionCallbacks.PermissionDeniedAndDontAskAgain +=
+                OnPermissionDenied;
+
+            Permission.RequestUserPermission(
+                ActivityPermission,
+                permissionCallbacks
+            );
+
+            return;
+        }
+#endif
+
+        BeginPrepareStepCounter();
+    }
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+    private void OnPermissionGranted(string permissionName)
+    {
+        BeginPrepareStepCounter();
+    }
+
+    private void OnPermissionDenied(string permissionName)
+    {
+        sensorReady = false;
+        distanceText.text = "신체 활동 권한이 거부되었습니다.";
+    }
+#endif
+
+    private void BeginPrepareStepCounter()
+    {
+        if (prepareCoroutine != null)
+        {
+            StopCoroutine(prepareCoroutine);
+        }
+
+        prepareCoroutine = StartCoroutine(
+            PrepareStepCounterCoroutine()
+        );
+    }
+
+    private IEnumerator PrepareStepCounterCoroutine()
+    {
+        distanceText.text = "걸음 센서 준비 중...";
+
+        // 기기 센서가 Input System에 등록될 때까지 잠시 대기
+        for (int i = 0; i < 120; i++)
         {
             stepCounter = StepCounter.current;
-        }
 
-        if (stepCounter == null)
-        {
-            if (distanceText != null)
+            if (stepCounter != null)
             {
-                distanceText.text = "거리 측정 불가";
+                InputSystem.EnableDevice(stepCounter);
+
+                sensorReady = true;
+                prepareCoroutine = null;
+
+                UpdateDistanceText();
+                yield break;
             }
 
-            return false;
+            yield return null;
         }
 
-        // 스마트폰의 걸음 수 센서를 활성화
-        InputSystem.EnableDevice(stepCounter);
-        return true;
+        sensorReady = false;
+        prepareCoroutine = null;
+        distanceText.text = "걸음 센서를 사용할 수 없습니다.";
     }
 
     public void StartMeasurement()
     {
-        if (!PrepareStepCounter())
+        if (!sensorReady || stepCounter == null)
         {
+            distanceText.text = "걸음 센서 준비가 필요합니다.";
+            BeginPrepareStepCounter();
             return;
         }
 
-        // 시작 버튼을 누른 순간의 누적 걸음 수를 기준점으로 저장
+        // 시작 버튼을 누른 순간의 누적 걸음 수를 기준값으로 저장
         startStepCount =
             stepCounter.stepCounter.ReadValue();
 
@@ -113,9 +189,16 @@ public class ExerciseDistanceTracker : MonoBehaviour
 
     private void OnDisable()
     {
+        isMeasuring = false;
+
+        if (prepareCoroutine != null)
+        {
+            StopCoroutine(prepareCoroutine);
+            prepareCoroutine = null;
+        }
+
         if (stepCounter != null)
         {
-            // 운동 씬을 벗어나면 센서 사용 중지
             InputSystem.DisableDevice(stepCounter);
         }
     }
