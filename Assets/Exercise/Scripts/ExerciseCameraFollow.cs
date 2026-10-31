@@ -11,7 +11,7 @@ public class ExerciseCameraFollow : MonoBehaviour
 
     [Header("카메라 줌")]
     [SerializeField] private float startSize = 2f;
-    [SerializeField] private float targetSize = 1.5f;
+    [SerializeField] private float targetSize = 2f;
     [SerializeField] private float zoomSpeed = 1f;
 
     private Camera targetCamera;
