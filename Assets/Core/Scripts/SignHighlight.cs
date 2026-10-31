@@ -29,12 +29,21 @@ public class SignHighlight : MonoBehaviour
         isPlayerNear = distance <= highlightDistance;
         highlightObject.SetActive(isPlayerNear);
 
-        if (isPlayerNear &&
-            !minigamePopup.IsOpen &&
-            IsEnterPressed())
+        if (IsEnterPressed())
         {
-            minigamePopup.OpenPopup(targetSceneName);
+            TryInteract();
         }
+    }
+
+    public bool TryInteract()
+    {
+        if (!isPlayerNear || minigamePopup == null || minigamePopup.IsOpen)
+        {
+            return false;
+        }
+
+        minigamePopup.OpenPopup(targetSceneName);
+        return true;
     }
 
     private bool IsEnterPressed()
