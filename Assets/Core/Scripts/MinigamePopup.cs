@@ -4,7 +4,6 @@ using UnityEngine.EventSystems;
 public class MinigamePopup : MonoBehaviour
 {
     [SerializeField] private GameObject popupWindow;
-    [SerializeField] private SceneLoader sceneLoader;
     [SerializeField] private PlayerController playerController;
     private string targetSceneName;
 
@@ -31,8 +30,14 @@ public class MinigamePopup : MonoBehaviour
 
     public void MoveScene()
     {
+        if (SceneLoader.Instance == null)
+        {
+            Debug.LogError("SceneLoader.Instance가 없습니다. CoreGameplay의 SceneLoader를 확인하세요.");
+            return;
+        }
+
         playerController.SetCanMove(true);//씬 이동 전에 이동잠금 해제
-        sceneLoader.LoadScene(targetSceneName);
+        SceneLoader.Instance.LoadScene(targetSceneName);
     }
 
     public void ClosePopup()
