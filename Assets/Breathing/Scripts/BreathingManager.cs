@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using UnityEngine;
 
 public class BreathingManager : MonoBehaviour
@@ -10,9 +9,13 @@ public class BreathingManager : MonoBehaviour
     public float minAmplitude = 0.1f;
     public float maxAmplitude = 0.4f;
 
+    [Header("미션 설정")]
+    public float successDuration = 5f;
+
     private float breathDuration = 0f;
     private bool isBreathing = false;
     private float bestDuration = 0f;
+    private bool missionSuccess = false;
 
     void Start()
     {
@@ -22,12 +25,12 @@ public class BreathingManager : MonoBehaviour
         {
             micDevice = Microphone.devices[0];
             micClip = Microphone.Start(micDevice, true, 10, 44100);
-            UnityEngine.Debug.Log("마이크 시작: " + micDevice);
-            UnityEngine.Debug.Log("micClip null? " + (micClip == null));
+            Debug.Log("마이크 시작: " + micDevice);
+            Debug.Log("micClip null? " + (micClip == null));
         }
         else
         {
-            UnityEngine.Debug.Log("마이크 없음!");
+            Debug.Log("마이크 없음!");
         }
     }
 
@@ -39,6 +42,9 @@ public class BreathingManager : MonoBehaviour
         {
             isBreathing = true;
             breathDuration += Time.deltaTime;
+
+            if (breathDuration >= successDuration)
+                missionSuccess = true;
         }
         else
         {
@@ -49,7 +55,7 @@ public class BreathingManager : MonoBehaviour
                     bestDuration = breathDuration;
                     PlayerPrefs.SetFloat("BestBreathDuration", bestDuration);
                     PlayerPrefs.Save();
-                    UnityEngine.Debug.Log("새 기록: " + bestDuration + "초");
+                    Debug.Log("새 기록: " + bestDuration + "초");
                 }
                 breathDuration = 0f;
                 isBreathing = false;
@@ -80,4 +86,6 @@ public class BreathingManager : MonoBehaviour
     public float GetBreathDuration() => breathDuration;
     public float GetBestDuration() => bestDuration;
     public bool IsInGreenZone() => isBreathing;
+    public bool IsMissionSuccess() => missionSuccess;
+    public float GetSuccessDuration() => successDuration;
 }
