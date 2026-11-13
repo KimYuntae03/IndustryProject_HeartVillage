@@ -5,9 +5,6 @@ public class ExerciseQuitPopup : MonoBehaviour
     [Header("UI")]
     [SerializeField] private GameObject quitPopup;
 
-    [Header("씬 이동")]
-    [SerializeField] private SceneLoader sceneLoader;
-
     private void Start()
     {
         // 씬에 들어왔을 때 게임이 정상적으로 진행되도록 초기화
@@ -31,8 +28,14 @@ public class ExerciseQuitPopup : MonoBehaviour
 
     public void QuitExercise()
     {
+        if (SceneLoader.Instance == null)
+        {
+            Debug.LogError("SceneLoader.Instance가 없습니다. CoreGameplay에서 시작했는지 확인하세요.");
+            return;
+        }
+
         // Time.timeScale은 씬이 바뀌어도 유지되므로 반드시 복구
         Time.timeScale = 1f;
-        sceneLoader.LoadScene("CoreGameplay");
+        SceneLoader.Instance.LoadScene("CoreGameplay");
     }
 }
