@@ -17,6 +17,8 @@ public class ExerciseRecordManager : MonoBehaviour
 
     private bool recordSavedThisSession;
 
+    public int AwardedHeartPoints { get; private set; }
+    public ExerciseDistanceCheck DistanceCheck { get; private set; }
     public bool HadPreviousRecord { get; private set; }
     public bool IsNewBestRecord { get; private set; }
 
@@ -46,35 +48,39 @@ public class ExerciseRecordManager : MonoBehaviour
             Mathf.Max(0f, distanceTracker.DistanceMeters);
 
         HadPreviousRecord =
-            PlayerPrefs.GetInt(HasRecordKey, 0) == 1;
+            PlayerPrefs.GetInt(HasRecordKey, 0) == 1 && PlayerPrefs.HasKey(BestDistanceKey);
 
         PreviousBestDistance =
             PlayerPrefs.GetFloat(BestDistanceKey, 0f);
 
-        IsNewBestRecord =
-            !HadPreviousRecord ||
-            CurrentDistance > PreviousBestDistance;
-
-        UpdatedBestDistance = IsNewBestRecord
-            ? CurrentDistance
-            : PreviousBestDistance;
-
-        PlayerPrefs.SetInt(HasRecordKey, 1);
-
-        PlayerPrefs.SetFloat(
-            LastDistanceKey,
-            CurrentDistance
-        );
-
-        PlayerPrefs.SetFloat(
-            BestDistanceKey,
-            UpdatedBestDistance
-        );
-
-        // 6분 완료 시 한 번만 실제 저장
-        PlayerPrefs.Save();
-
         recordSavedThisSession = true;
+        DistanceCheck = distanceTracker.DistanceCheck;
+        UpdatedBestDistance = PreviousBestDistance;
+        if (DistanceCheck == ExerciseDistanceCheck.Mismatch) return;
+
+        int reward = 10;
+        if (DistanceCheck == ExerciseDistanceCheck.Consistent)
+        {
+            IsNewBestRecord = !HadPreviousRecord || CurrentDistance > PreviousBestDistance;
+            if (IsNewBestRecord)
+            {
+                UpdatedBestDistance = CurrentDistance;
+                if (HadPreviousRecord) reward = 15;
+            }
+            PlayerPrefs.SetInt(HasRecordKey, 1);
+            PlayerPrefs.SetFloat(LastDistanceKey, CurrentDistance);
+            PlayerPrefs.SetFloat(BestDistanceKey, UpdatedBestDistance);
+        }
+        if (VillagePlayerData.AddHeartPoints(reward))
+        {
+            // 공용 지갑이 바뀐 기록 키와 하트 잔액을 PlayerPrefs에 함께 저장한다.
+            AwardedHeartPoints = reward;
+        }
+        else
+        {
+            PlayerPrefs.Save();
+            Debug.LogWarning("하트 포인트 보유 한도를 초과해 운동 보상을 지급하지 못했습니다.");
+        }
 
         Debug.Log(
             $"운동 기록 저장 완료 - " +
