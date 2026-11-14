@@ -6,7 +6,7 @@ public class BreathingManager : MonoBehaviour
     private string micDevice;
     private float currentAmplitude;
 
-    public float minAmplitude = 0.1f;
+    public float minAmplitude = 0.01f;
     public float maxAmplitude = 0.4f;
 
     [Header("미션 설정")]
