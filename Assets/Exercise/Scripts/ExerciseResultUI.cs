@@ -19,10 +19,6 @@ public class ExerciseResultUI : MonoBehaviour
     [Header("운동 기록")]
     [SerializeField] private ExerciseRecordManager recordManager;
 
-    [Header("임시 보상 설정")]
-    [SerializeField, Min(0)] private int baseReward = 100;
-    [SerializeField, Min(0)] private int newRecordBonus = 50;
-
     [Header("순차 표시 간격")]
     [SerializeField, Min(0f)] private float revealInterval = 0.35f;
 
@@ -70,12 +66,11 @@ public class ExerciseResultUI : MonoBehaviour
         currentRecordText.text =
             $"측정 기록\n{recordManager.CurrentDistance:0.0} m";
 
-        // 이전 최고 기록 표시
+        // 기존 최고 기록을 넘어야 신기록 보상을 받는다.
         if (recordManager.HadPreviousRecord)
         {
             previousBestText.text =
-                $"이전 최고 기록\n" +
-                $"{recordManager.PreviousBestDistance:0.0} m";
+                $"이전 최고 기록\n{recordManager.PreviousBestDistance:0.0} m";
         }
         else
         {
@@ -83,27 +78,13 @@ public class ExerciseResultUI : MonoBehaviour
                 "이전 최고 기록\n기록 없음";
         }
 
-        // 이전 기록이 있는 상태에서 최고 기록을 갱신했을 때 추가 보상
-        bool receivesBonus =
-            recordManager.HadPreviousRecord &&
-            recordManager.IsNewBestRecord;
-
-        int bonusReward = receivesBonus ? newRecordBonus : 0;
-        int totalReward = baseReward + bonusReward;
-
-        if (receivesBonus)
+        string reason = recordManager.DistanceCheck switch
         {
-            rewardText.text =
-                $"기본 보상 {baseReward} 코인\n" +
-                $"신기록 추가 보상 +{bonusReward} 코인\n" +
-                $"총 보상 {totalReward} 코인";
-        }
-        else
-        {
-            rewardText.text =
-                $"기본 보상 {baseReward} 코인\n" +
-                $"총 보상 {totalReward} 코인";
-        }
+            ExerciseDistanceCheck.Mismatch => "걸음 거리와 위치 기록이 크게 달라요",
+            ExerciseDistanceCheck.Inconclusive => "거리 확인이 어려워 참여 보상만 지급해요",
+            _ => "운동 보상"
+        };
+        rewardText.text = $"{reason}\n+{recordManager.AwardedHeartPoints} 하트 포인트";
 
         // 반투명 배경을 먼저 표시
         resultRoot.SetActive(true);
