@@ -14,3 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   itemName: Flower
   icon: {fileID: 5186607301480947050, guid: cf1eb4c4e6c908149b73a0d5a93b6c7d, type: 3}
+  itemId: flower
+  placementSprite: {fileID: 0}

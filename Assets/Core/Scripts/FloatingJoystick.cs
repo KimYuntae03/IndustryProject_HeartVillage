@@ -13,6 +13,7 @@ public sealed class FloatingJoystick : OnScreenControl,
     [Header("Joystick UI")]
     [SerializeField] private RectTransform joystickBackground;
     [SerializeField] private RectTransform joystickHandle;
+    [SerializeField] private IslandPlacement placement;
 
     [Header("Joystick Settings")]
     [SerializeField, Min(1f)] private float movementRadius = 70f;
@@ -28,6 +29,7 @@ public sealed class FloatingJoystick : OnScreenControl,
     private Vector2 joystickOriginLocalPosition;
     private float pointerDownTime;
     private bool isDraggingJoystick;
+    private bool placingWithPointer;
 
     protected override string controlPathInternal
     {
@@ -60,6 +62,11 @@ public sealed class FloatingJoystick : OnScreenControl,
 
         activePointerId = eventData.pointerId;
         pointerDownScreenPosition = eventData.position;
+        placingWithPointer = placement != null && placement.TryGrab(eventData.position);
+        if (placingWithPointer)
+        {
+            return;
+        }
         pointerDownTime = Time.unscaledTime;
         isDraggingJoystick = false;
 
@@ -84,6 +91,12 @@ public sealed class FloatingJoystick : OnScreenControl,
             return;
         }
 
+        if (placingWithPointer)
+        {
+            if (eventData.pointerCurrentRaycast.gameObject == gameObject)
+                placement.DragPreview(eventData.position);
+            return;
+        }
         Vector2 screenDelta = eventData.position - pointerDownScreenPosition;
 
         if (!isDraggingJoystick)
@@ -108,9 +121,23 @@ public sealed class FloatingJoystick : OnScreenControl,
     {
         if (eventData.pointerId == activePointerId)
         {
-            if (!isDraggingJoystick && Time.unscaledTime - pointerDownTime <= maxTapDuration)
+            if (placingWithPointer)
             {
-                TryWorldInteraction(eventData.position);
+                bool overWorld = eventData.pointerCurrentRaycast.gameObject == gameObject;
+                placement.ReleasePreview(eventData.position, eventData.dragging, overWorld);
+            }
+            else if ((placement == null || !placement.IsPlacing) && !isDraggingJoystick &&
+                     Time.unscaledTime - pointerDownTime <= maxTapDuration)
+            {
+                if (placement != null && placement.IsRecovering)
+                {
+                    if (eventData.pointerCurrentRaycast.gameObject == gameObject && Camera.main != null)
+                        placement.RecoverAt(Camera.main.ScreenToWorldPoint(eventData.position));
+                }
+                else
+                {
+                    TryWorldInteraction(eventData.position);
+                }
             }
 
             ResetJoystick();
@@ -146,6 +173,8 @@ public sealed class FloatingJoystick : OnScreenControl,
         }
 
         activePointerId = int.MinValue;
+        if (placingWithPointer && placement != null) placement.ReturnToValidCell();
+        placingWithPointer = false;
         isDraggingJoystick = false;
         HideJoystick();
     }

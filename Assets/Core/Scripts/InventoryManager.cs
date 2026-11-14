@@ -1,44 +1,44 @@
-using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class InventoryManager : MonoBehaviour
 {
     [SerializeField] private InventorySlotUI[] slots;
+    [FormerlySerializedAs("testItem"), SerializeField] private ItemData starterItem;
+    [SerializeField] private ItemData[] catalog;
+    [SerializeField] private TMP_Text playerNameText;
+    [SerializeField] private TMP_Text heartPointsText;
+    [SerializeField] private IslandPlacement placement;
 
-    private readonly List<ItemData> items = new();
-
-    [Header("테스트용 아이템")]
-    [SerializeField] private ItemData testItem;
-
-    private void Start()
+    private void OnEnable()
     {
-        RefreshInventory();
-        // 인벤토리 표시 테스트
-        if (testItem != null)
-            AddItem(testItem);
+        VillagePlayerData.GrantStarterOnce(starterItem);
+        VillagePlayerData.Changed += Refresh;
+        Refresh();
     }
+
+    private void OnDisable() => VillagePlayerData.Changed -= Refresh;
+
+    public ItemData FindItem(string id) => System.Array.Find(catalog, item => item != null && item.Id == id);
 
     public void AddItem(ItemData item)
     {
-        // 빈 공간이 없으면 아이템을 추가하지 않음
-        if (items.Count >= slots.Length)
-        {
-            Debug.Log("인벤토리가 가득 찼습니다.");
-            return;
-        }
-
-        items.Add(item);
-        RefreshInventory();
+        if (item != null && FindItem(item.Id) != null)
+            VillagePlayerData.AddItem(item);
     }
 
-    private void RefreshInventory()
+    private void Refresh()
     {
-        // 모든 슬롯을 먼저 비움
-        foreach (InventorySlotUI slot in slots)
-            slot.ClearSlot();
-
-        // 가지고 있는 아이템을 순서대로 표시
-        for (int i = 0; i < items.Count; i++)
-            slots[i].SetItem(items[i], 1);
+        playerNameText.text = VillagePlayerData.PlayerName;
+        heartPointsText.text = VillagePlayerData.HeartPoints.ToString();
+        int index = 0;
+        foreach (var item in catalog)
+        {
+            if (item == null || index == slots.Length) continue;
+            int quantity = VillagePlayerData.Quantity(item.Id);
+            if (quantity > 0) slots[index++].SetItem(item, quantity, placement);
+        }
+        while (index < slots.Length) slots[index++].ClearSlot();
     }
 }

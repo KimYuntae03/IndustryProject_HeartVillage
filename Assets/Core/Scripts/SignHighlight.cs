@@ -37,7 +37,7 @@ public class SignHighlight : MonoBehaviour
 
     public bool TryInteract()
     {
-        if (!isPlayerNear || minigamePopup == null || minigamePopup.IsOpen)
+        if (!isPlayerNear || minigamePopup == null || minigamePopup.IsOpen || string.IsNullOrEmpty(targetSceneName))
         {
             return false;
         }

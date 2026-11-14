@@ -23,6 +23,7 @@ public class InventoryUI : MonoBehaviour
     private float targetCameraSize;
 
     private bool isOpen;
+    public event System.Action Opened;
     private Coroutine animationCoroutine;
 
     private void Start()
@@ -79,6 +80,7 @@ public class InventoryUI : MonoBehaviour
 
     public void OpenInventory()
     {
+        Opened?.Invoke();
         isOpen = true;
         inventoryRoot.SetActive(true);
 

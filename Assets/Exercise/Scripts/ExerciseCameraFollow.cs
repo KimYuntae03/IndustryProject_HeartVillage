@@ -9,12 +9,8 @@ public class ExerciseCameraFollow : MonoBehaviour
     [Header("카메라 이동")]
     [SerializeField] private float followSmoothTime = 0.15f;
 
-    [Header("카메라 줌")]
-    [SerializeField] private float startSize = 2f;
-    [SerializeField] private float targetSize = 2f;
-    [SerializeField] private float zoomSpeed = 1f;
-
     private Camera targetCamera;
+    private float landscapeSize;
     private Vector3 smoothedPosition;
     private Vector3 followVelocity;
 
@@ -24,18 +20,19 @@ public class ExerciseCameraFollow : MonoBehaviour
         targetCamera = GetComponent<Camera>();
         smoothedPosition = transform.position;
 
-        // 운동 씬 진입 시 카메라 크기를 2로 시작
-        targetCamera.orthographicSize = startSize;
+        // 씬에 설정된 크기는 마을의 가로 화면을 기준으로 한다.
+        landscapeSize = targetCamera.orthographicSize;
+        MatchLandscapeZoom();
 
         // 픽셀 아트 타일 경계가 이동 중 보간되어 번쩍이지 않도록 한다.
         targetCamera.allowMSAA = false;
         targetCamera.allowDynamicResolution = false;
     }
 
-    // 플레이어 이동이 끝난 후 카메라 위치를 갱신하고 목표 크기까지 확대(카메라 떨림 방지)
     private void LateUpdate()
     {
-        UpdateZoom();
+        // 기기 회전이 Awake 이후 완료되는 경우에도 실제 뷰포트에 맞춘다.
+        MatchLandscapeZoom();
         FollowPlayer();
     }
 
@@ -78,14 +75,10 @@ public class ExerciseCameraFollow : MonoBehaviour
         transform.position = renderedPosition;
     }
 
-    private void UpdateZoom()
+    private void MatchLandscapeZoom()
     {
-        // Orthographic Size를 2에서 1.5까지 부드럽게 변경
-        targetCamera.orthographicSize =
-            Mathf.MoveTowards(
-                targetCamera.orthographicSize,
-                targetSize,
-                zoomSpeed * Time.deltaTime
-            );
+        int shortSide = Mathf.Min(targetCamera.pixelWidth, targetCamera.pixelHeight);
+        if (shortSide > 0)
+            targetCamera.orthographicSize = landscapeSize * targetCamera.pixelHeight / shortSide;
     }
 }

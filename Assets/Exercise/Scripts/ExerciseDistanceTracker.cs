@@ -24,6 +24,17 @@ public class ExerciseDistanceTracker : MonoBehaviour
 
     private bool isMeasuring;
     private bool sensorReady;
+    private ExerciseGpsCheck gps;
+    private bool locationStarted;
+    private bool suspended;
+    private bool measuringSession;
+    private bool needsStepBaseline;
+    private int stepsBeforeBreak;
+    private double sessionSeconds;
+    private double earliestFix;
+    private double lastReadTimestamp;
+
+    public ExerciseDistanceCheck DistanceCheck { get; private set; }
 
 #if UNITY_ANDROID && !UNITY_EDITOR
     private const string ActivityPermission =
@@ -50,17 +61,32 @@ public class ExerciseDistanceTracker : MonoBehaviour
 
     private void Update()
     {
-        if (!isMeasuring || !sensorReady || stepCounter == null)
+        if (!measuringSession) return;
+        if (Time.timeScale <= 0 || suspended)
         {
+            SuspendSamples();
             return;
         }
+        sessionSeconds += Time.deltaTime;
+        if (!isMeasuring || !sensorReady || stepCounter == null) return;
+        ReadSteps();
+        ReadLocation();
+        UpdateDistanceText();
+    }
 
+    private void ReadSteps()
+    {
         // Android 기기가 기록한 현재 누적 걸음 수
         int currentStepCount =
             stepCounter.stepCounter.ReadValue();
 
         // 미니게임 시작 이후 걸은 걸음 수만 계산
-        SessionStepCount = Mathf.Max(
+        if (needsStepBaseline)
+        {
+            startStepCount = currentStepCount;
+            needsStepBaseline = false;
+        }
+        SessionStepCount = stepsBeforeBreak + Mathf.Max(
             0,
             currentStepCount - startStepCount
         );
@@ -69,7 +95,6 @@ public class ExerciseDistanceTracker : MonoBehaviour
         DistanceMeters =
             SessionStepCount * strideLengthMeters;
 
-        UpdateDistanceText();
     }
 
     private void RequestPermissionAndPrepareSensor()
@@ -153,6 +178,18 @@ public class ExerciseDistanceTracker : MonoBehaviour
 
     public void StartMeasurement()
     {
+        StopLocation();
+        gps = new ExerciseGpsCheck();
+        sessionSeconds = 0;
+        stepsBeforeBreak = 0;
+        needsStepBaseline = false;
+        SessionStepCount = 0;
+        DistanceMeters = 0;
+        DistanceCheck = ExerciseDistanceCheck.Inconclusive;
+        measuringSession = true;
+        isMeasuring = false;
+        earliestFix = UnixSeconds();
+        lastReadTimestamp = 0;
         if (!sensorReady || stepCounter == null)
         {
             distanceText.text = "걸음 센서 준비가 필요합니다.";
@@ -164,16 +201,73 @@ public class ExerciseDistanceTracker : MonoBehaviour
         startStepCount =
             stepCounter.stepCounter.ReadValue();
 
-        SessionStepCount = 0;
-        DistanceMeters = 0f;
         isMeasuring = true;
+#if UNITY_ANDROID && !UNITY_EDITOR
+        if (!Permission.HasUserAuthorizedPermission(Permission.FineLocation))
+            Permission.RequestUserPermissions(new[] { Permission.FineLocation, Permission.CoarseLocation });
+#endif
 
         UpdateDistanceText();
     }
 
     public void StopMeasurement()
     {
+        if (measuringSession && isMeasuring && !suspended && Time.timeScale > 0)
+        {
+            ReadSteps();
+            ReadLocation();
+            DistanceCheck = gps.Evaluate(DistanceMeters, sessionSeconds);
+        }
+        measuringSession = false;
         isMeasuring = false;
+        StopLocation();
+    }
+
+    private static double UnixSeconds() => System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000.0;
+
+    private void ReadLocation()
+    {
+#if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
+#if UNITY_ANDROID
+        if (!Permission.HasUserAuthorizedPermission(Permission.FineLocation)) return;
+#endif
+        if (!locationStarted)
+        {
+            if (!Input.location.isEnabledByUser) return;
+            Input.location.Start(5f, 0f);
+            locationStarted = true;
+        }
+        if (Input.location.status != LocationServiceStatus.Running) return;
+        var fix = Input.location.lastData;
+        if (fix.timestamp <= lastReadTimestamp || fix.timestamp < earliestFix) return;
+        lastReadTimestamp = fix.timestamp;
+        double age = UnixSeconds() - fix.timestamp;
+        if (age < -1 || age > 5) { gps.BreakSegment(); return; }
+        gps.Sample(fix.timestamp, fix.latitude, fix.longitude, fix.horizontalAccuracy, DistanceMeters);
+#endif
+    }
+
+    private void StopLocation()
+    {
+        if (locationStarted) Input.location.Stop();
+        locationStarted = false;
+    }
+
+    private void SuspendSamples()
+    {
+        if (!measuringSession) return;
+        StopLocation();
+        gps.BreakSegment();
+        stepsBeforeBreak = SessionStepCount;
+        needsStepBaseline = true;
+        earliestFix = UnixSeconds();
+    }
+
+    private void OnApplicationPause(bool paused)
+    {
+        suspended = paused;
+        if (paused) SuspendSamples();
+        else earliestFix = UnixSeconds();
     }
 
     private void UpdateDistanceText()
@@ -189,6 +283,8 @@ public class ExerciseDistanceTracker : MonoBehaviour
 
     private void OnDisable()
     {
+        measuringSession = false;
+        StopLocation();
         isMeasuring = false;
 
         if (prepareCoroutine != null)

@@ -6,8 +6,10 @@ public class MinigamePopup : MonoBehaviour
     [SerializeField] private GameObject popupWindow;
     [SerializeField] private PlayerController playerController;
     private string targetSceneName;
+    private GameObject activeWindow;
 
-    public bool IsOpen => popupWindow != null && popupWindow.activeSelf;
+    public bool IsOpen => activeWindow != null && activeWindow.activeSelf;
+    public event System.Action Opened;
 
     private void Start()
     {
@@ -17,15 +19,18 @@ public class MinigamePopup : MonoBehaviour
 
     public void OpenPopup(string sceneName)
     {
-        if (IsOpen) //팝업이 열려있다면 다시 실행 X
-        {
-            return;
-        }
-
+        if (IsOpen) return;
         targetSceneName = sceneName;
-        popupWindow.SetActive(true);
+        OpenWindow(popupWindow);
+    }
 
-        playerController.SetCanMove(false);//열려있으면 이동 X
+    public void OpenWindow(GameObject window)
+    {
+        if (IsOpen || window == null) return;
+        Opened?.Invoke();
+        activeWindow = window;
+        activeWindow.SetActive(true);
+        playerController.SetCanMove(false);
     }
 
     public void MoveScene()
@@ -42,7 +47,9 @@ public class MinigamePopup : MonoBehaviour
 
     public void ClosePopup()
     {
-        popupWindow.SetActive(false);
+        if (!IsOpen) return;
+        activeWindow.SetActive(false);
+        activeWindow = null;
 
         //찹업 닫으면 플레이어 이동 가능
         playerController.SetCanMove(true);

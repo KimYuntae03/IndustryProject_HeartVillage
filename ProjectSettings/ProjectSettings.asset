@@ -425,7 +425,7 @@ PlayerSettings:
   logObjCUncaughtExceptions: 1
   enableCrashReportAPI: 0
   cameraUsageDescription: 
-  locationUsageDescription: 
+  locationUsageDescription: "운동 중 걸음 수로 계산한 거리와 실제 이동 거리를 비교하기 위해 위치를 사용합니다."
   microphoneUsageDescription: 
   bluetoothUsageDescription: 
   macOSTargetOSVersion: 12.0
