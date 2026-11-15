@@ -12,10 +12,14 @@ public class BreathingCountdownManager : MonoBehaviour
     void Start()
     {
         breathingManager.enabled = false;
-        StartCoroutine(StartCountdown());
     }
 
-    IEnumerator StartCountdown()
+    public void StartCountdown()
+    {
+        StartCoroutine(CountdownCoroutine());
+    }
+
+    IEnumerator CountdownCoroutine()
     {
         countdownPanel.SetActive(true);
 

@@ -1,4 +1,5 @@
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 public class BreathingManager : MonoBehaviour
 {
@@ -11,22 +12,28 @@ public class BreathingManager : MonoBehaviour
 
     [Header("미션 설정")]
     public float successDuration = 5f;
+    public float totalGameTime = 30f;
 
     private float breathDuration = 0f;
     private bool isBreathing = false;
     private float bestDuration = 0f;
     private bool missionSuccess = false;
+    private float gameTimer = 0f;
+    private bool gameOver = false;
+
+    void Awake()
+    {
+        enabled = false;
+        gameTimer = totalGameTime;
+        bestDuration = PlayerPrefs.GetFloat("BestBreathDuration", 0f);
+    }
 
     void Start()
     {
-        bestDuration = PlayerPrefs.GetFloat("BestBreathDuration", 0f);
-
         if (Microphone.devices.Length > 0)
         {
             micDevice = Microphone.devices[0];
             micClip = Microphone.Start(micDevice, true, 10, 44100);
-            Debug.Log("마이크 시작: " + micDevice);
-            Debug.Log("micClip null? " + (micClip == null));
         }
         else
         {
@@ -36,6 +43,17 @@ public class BreathingManager : MonoBehaviour
 
     void Update()
     {
+        if (gameOver || missionSuccess) return;
+
+        gameTimer -= Time.deltaTime;
+        if (gameTimer <= 0f)
+        {
+            gameTimer = 0f;
+            gameOver = true;
+            SaveBest();
+            return;
+        }
+
         currentAmplitude = GetMicAmplitude();
 
         if (currentAmplitude >= minAmplitude && currentAmplitude <= maxAmplitude)
@@ -44,22 +62,26 @@ public class BreathingManager : MonoBehaviour
             breathDuration += Time.deltaTime;
 
             if (breathDuration >= successDuration)
-                missionSuccess = true;
-        }
-        else
-        {
-            if (isBreathing)
             {
-                if (breathDuration > bestDuration)
-                {
-                    bestDuration = breathDuration;
-                    PlayerPrefs.SetFloat("BestBreathDuration", bestDuration);
-                    PlayerPrefs.Save();
-                    Debug.Log("새 기록: " + bestDuration + "초");
-                }
-                breathDuration = 0f;
-                isBreathing = false;
+                missionSuccess = true;
+                SaveBest();
             }
+        }
+        else if (isBreathing)
+        {
+            SaveBest();
+            breathDuration = 0f;
+            isBreathing = false;
+        }
+    }
+
+    void SaveBest()
+    {
+        if (breathDuration > bestDuration)
+        {
+            bestDuration = breathDuration;
+            PlayerPrefs.SetFloat("BestBreathDuration", bestDuration);
+            PlayerPrefs.Save();
         }
     }
 
@@ -88,4 +110,6 @@ public class BreathingManager : MonoBehaviour
     public bool IsInGreenZone() => isBreathing;
     public bool IsMissionSuccess() => missionSuccess;
     public float GetSuccessDuration() => successDuration;
+    public float GetGameTimer() => gameTimer;
+    public bool IsGameOver() => gameOver;
 }
