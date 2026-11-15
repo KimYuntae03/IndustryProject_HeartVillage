@@ -26,6 +26,11 @@ public class BreathingUI : MonoBehaviour
             : $"목표까지: {remaining:F1}초";
 
         if (timerText != null)
+        {
             timerText.text = $"남은 시간: {Mathf.CeilToInt(gameTimer)}초";
+            timerText.color = gameTimer <= 10f
+                ? new Color(1f, 0.45f, 0.4f)
+                : new Color(1f, 0.914f, 0.722f);
+        }
     }
 }

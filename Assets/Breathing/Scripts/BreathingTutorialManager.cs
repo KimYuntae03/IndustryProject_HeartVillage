@@ -28,7 +28,7 @@ public class BreathingTutorialManager : MonoBehaviour
 
     private int currentPage = 0;
     private string[] pages = {
-        "마이크에 숨을 불어넣으세요!",
+        "마이크에 숨을 불어 넣으세요!",
         "풍선이 초록색이 될 때까지\n계속 불어주세요!",
         "30초 안에 5초를 유지하면\n미션 성공!"
     };
