@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEngine;
 using TMPro;
-using Debug = UnityEngine.Debug;
 
 public class GameResultManager : MonoBehaviour
 {
@@ -18,9 +17,8 @@ public class GameResultManager : MonoBehaviour
     public float balloonFlyDuration = 2.5f;
     public float balloonFlyDistance = 1400f;
 
-    [Header("임시 보상 설정")]
-    [SerializeField, Min(0)] private int baseReward = 100;
-    [SerializeField, Min(0)] private int newRecordBonus = 50;
+    [Header("데이터")]
+    [SerializeField] private int zoneId = 0;
 
     [Header("순차 표시 간격")]
     [SerializeField, Min(0f)] private float revealInterval = 0.35f;
@@ -45,21 +43,25 @@ public class GameResultManager : MonoBehaviour
         resultUI.transform.SetAsLastSibling();
 
         success = breathingManager.IsMissionSuccess();
-        float best = breathingManager.GetBestDuration();
         float goal = breathingManager.GetSuccessDuration();
 
+        SaveOutcome outcome = DataManager.Instance.SaveResult(new MinigameResult
+        {
+            gameId = "breathing",
+            zoneId = zoneId,
+            success = success,
+            score = breathingManager.GetSessionBest(),
+            playSeconds = breathingManager.GetPlaySeconds()
+        });
+
         resultText.text = success
-            ? $"미션 성공!\n최고 기록: {best:F1}초 / 목표: {goal:F1}초"
-            : $"다시 도전!\n최고 기록: {best:F1}초 / 목표: {goal:F1}초";
+            ? $"미션 성공!\n최고 기록: {outcome.bestScore:F1}초 / 목표: {goal:F1}초"
+            : $"다시 도전!\n최고 기록: {outcome.bestScore:F1}초 / 목표: {goal:F1}초";
 
-        bool isNewRecord = best > PlayerPrefs.GetFloat("BestBreathDuration_Prev", 0f);
-        int bonus = (success && isNewRecord) ? newRecordBonus : 0;
-        int total = baseReward + bonus;
-
-        if (success && isNewRecord)
-            rewardText.text = $"보상: {baseReward} Heart Point\n신기록 보너스: +{bonus} Heart Point\n합계: {total} Heart Point";
+        if (outcome.bonus > 0)
+            rewardText.text = $"보상: {outcome.baseReward} Heart Point\n신기록 보너스: +{outcome.bonus} Heart Point\n합계: {outcome.total} Heart Point";
         else
-            rewardText.text = $"보상: {baseReward} Heart Point\n합계: {total} Heart Point";
+            rewardText.text = $"보상: {outcome.baseReward} Heart Point\n합계: {outcome.total} Heart Point";
 
         returnButton.SetActive(false);
         StartCoroutine(RevealResult());
@@ -120,7 +122,7 @@ public class GameResultManager : MonoBehaviour
         Time.timeScale = 1f;
         if (SceneLoader.Instance == null)
         {
-            Debug.LogError("SceneLoader.Instance가 없습니다. CoreGameplay에서 시작했는지 확인하세요.");
+            UnityEngine.Debug.LogError("SceneLoader.Instance가 없습니다. CoreGameplay에서 시작했는지 확인하세요.");
             return;
         }
         SceneLoader.Instance.LoadScene("CoreGameplay");
