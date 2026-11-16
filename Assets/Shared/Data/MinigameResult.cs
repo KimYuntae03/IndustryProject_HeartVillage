@@ -8,6 +8,8 @@ public class MinigameResult
     public bool success;
     public float score;
     public float playSeconds;
+    public bool rewardOnFail = false;
+    public bool allowBonus = true;
 }
 
 public class SaveOutcome
