@@ -74,8 +74,10 @@ public class DataManager : MonoBehaviour
     {
         float previousBest = GetBestScore(result.gameId);
         bool isNewRecord = result.score > previousBest;
-        int bonus = (result.success && isNewRecord) ? newRecordBonus : 0;
-        int total = baseReward + bonus;
+        bool eligible = result.success || result.rewardOnFail;
+        int baseAmount = eligible ? baseReward : 0;
+        int bonus = (eligible && result.allowBonus && isNewRecord) ? newRecordBonus : 0;
+        int total = baseAmount + bonus;
 
         data.playLogs.Add(new PlayLogEntry
         {
@@ -92,7 +94,7 @@ public class DataManager : MonoBehaviour
 
         return new SaveOutcome
         {
-            baseReward = baseReward,
+            baseReward = baseAmount,
             bonus = bonus,
             total = total,
             isNewRecord = isNewRecord,

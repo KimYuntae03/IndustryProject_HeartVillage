@@ -51,14 +51,17 @@ public class GameResultManager : MonoBehaviour
             zoneId = zoneId,
             success = success,
             score = breathingManager.GetSessionBest(),
-            playSeconds = breathingManager.GetPlaySeconds()
+            playSeconds = breathingManager.GetPlaySeconds(),
+            allowBonus = false
         });
 
         resultText.text = success
             ? $"미션 성공!\n최고 기록: {outcome.bestScore:F1}초 / 목표: {goal:F1}초"
             : $"다시 도전!\n최고 기록: {outcome.bestScore:F1}초 / 목표: {goal:F1}초";
 
-        if (outcome.bonus > 0)
+        if (outcome.total == 0)
+            rewardText.text = "보상 없음\n다시 도전해보세요!";
+        else if (outcome.bonus > 0)
             rewardText.text = $"보상: {outcome.baseReward} Heart Point\n신기록 보너스: +{outcome.bonus} Heart Point\n합계: {outcome.total} Heart Point";
         else
             rewardText.text = $"보상: {outcome.baseReward} Heart Point\n합계: {outcome.total} Heart Point";
