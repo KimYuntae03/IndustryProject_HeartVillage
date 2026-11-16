@@ -17,6 +17,7 @@ public class BreathingManager : MonoBehaviour
     private float breathDuration = 0f;
     private bool isBreathing = false;
     private float bestDuration = 0f;
+    private float sessionBest = 0f;
     private bool missionSuccess = false;
     private float gameTimer = 0f;
     private bool gameOver = false;
@@ -25,7 +26,7 @@ public class BreathingManager : MonoBehaviour
     {
         enabled = false;
         gameTimer = totalGameTime;
-        bestDuration = PlayerPrefs.GetFloat("BestBreathDuration", 0f);
+        bestDuration = DataManager.Instance.GetBestScore("breathing");
     }
 
     void Start()
@@ -50,7 +51,7 @@ public class BreathingManager : MonoBehaviour
         {
             gameTimer = 0f;
             gameOver = true;
-            SaveBest();
+            UpdateBest();
             return;
         }
 
@@ -64,25 +65,21 @@ public class BreathingManager : MonoBehaviour
             if (breathDuration >= successDuration)
             {
                 missionSuccess = true;
-                SaveBest();
+                UpdateBest();
             }
         }
         else if (isBreathing)
         {
-            SaveBest();
+            UpdateBest();
             breathDuration = 0f;
             isBreathing = false;
         }
     }
 
-    void SaveBest()
+    void UpdateBest()
     {
-        if (breathDuration > bestDuration)
-        {
-            bestDuration = breathDuration;
-            PlayerPrefs.SetFloat("BestBreathDuration", bestDuration);
-            PlayerPrefs.Save();
-        }
+        if (breathDuration > sessionBest) sessionBest = breathDuration;
+        if (breathDuration > bestDuration) bestDuration = breathDuration;
     }
 
     float GetMicAmplitude()
@@ -107,6 +104,8 @@ public class BreathingManager : MonoBehaviour
     public float GetCurrentAmplitude() => currentAmplitude;
     public float GetBreathDuration() => breathDuration;
     public float GetBestDuration() => bestDuration;
+    public float GetSessionBest() => sessionBest;
+    public float GetPlaySeconds() => totalGameTime - gameTimer;
     public bool IsInGreenZone() => isBreathing;
     public bool IsMissionSuccess() => missionSuccess;
     public float GetSuccessDuration() => successDuration;
