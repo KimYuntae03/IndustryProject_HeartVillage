@@ -8,7 +8,7 @@ public sealed class MedicationCheckSlot : MonoBehaviour
     [SerializeField] private UnityEngine.UI.Image checkmark;
 
     private UnityEngine.UI.Button button;
-    private int slot;
+    private TimeSpan doseTime;
     private float nextRefresh;
 
     private static int DayKey(DateTime day) => day.Year * 10000 + day.Month * 100 + day.Day;
@@ -16,17 +16,19 @@ public sealed class MedicationCheckSlot : MonoBehaviour
     private void Awake()
     {
         button = GetComponent<UnityEngine.UI.Button>();
-        slot = MedicationSchedule.FindSlot(recordKey);
-        if (slot < 0)
-        {
-            Debug.LogError($"복약 시간 설정을 찾을 수 없습니다: {recordKey}", this);
-            button.interactable = false;
-            enabled = false;
-            return;
-        }
-        GetComponentInChildren<TMPro.TMP_Text>(true).text =
-            MedicationSchedule.TimeAt(slot).ToString(@"hh\:mm");
         button.onClick.AddListener(RecordDose);
+    }
+
+    public void SetDoseTime(int minutes)
+    {
+        doseTime = TimeSpan.FromMinutes(Mathf.Clamp(minutes, 0, 1439));
+        GetComponentInChildren<TMPro.TMP_Text>(true).text = doseTime.ToString(@"hh\:mm");
+    }
+
+    private bool CanRecord(DateTime now)
+    {
+        var elapsed = now.TimeOfDay - doseTime;
+        return elapsed >= TimeSpan.Zero && elapsed < TimeSpan.FromMinutes(30);
     }
 
     private void OnEnable() => Refresh(DateTime.Now);
@@ -42,7 +44,7 @@ public sealed class MedicationCheckSlot : MonoBehaviour
     {
         var now = DateTime.Now;
         int today = DayKey(now);
-        if (MedicationSchedule.CanRecord(slot, now) && PlayerPrefs.GetInt(recordKey) != today)
+        if (CanRecord(now) && PlayerPrefs.GetInt(recordKey) != today)
         {
             PlayerPrefs.SetInt(recordKey, today);
             PlayerPrefs.Save();
@@ -54,6 +56,6 @@ public sealed class MedicationCheckSlot : MonoBehaviour
     {
         bool recorded = PlayerPrefs.GetInt(recordKey) == DayKey(now);
         checkmark.enabled = recorded;
-        button.interactable = !recorded && MedicationSchedule.CanRecord(slot, now);
+        button.interactable = !recorded && CanRecord(now);
     }
 }
