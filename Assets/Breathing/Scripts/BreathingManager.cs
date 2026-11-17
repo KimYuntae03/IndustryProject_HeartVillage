@@ -1,35 +1,64 @@
+using System.Collections;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 public class BreathingManager : MonoBehaviour
 {
-    private AudioClip micClip;
-    private string micDevice;
-    private float currentAmplitude;
-
-    public float minAmplitude = 0.01f;
-    public float maxAmplitude = 0.4f;
-
     [Header("미션 설정")]
     public float successDuration = 5f;
     public float totalGameTime = 30f;
 
+    [Header("인식 감도")]
+    public float breathMargin = 0.008f;
+    public float greenMargin = 0.025f;
+    public float maxAmplitude = 0.95f;
+    public float smoothing = 12f;
+    public float dropGraceTime = 0.4f;
+
+    [Header("소음 보정")]
+    public float defaultNoiseFloor = 0.005f;
+    public float maxNoiseFloor = 0.05f;
+    public float noiseMultiplier = 1.5f;
+    public bool showDebugLog = false;
+
+    private const int SampleWindow = 1024;
+    private readonly float[] samples = new float[SampleWindow];
+
+    private AudioClip micClip;
+    private string micDevice;
+    private bool micStarted = false;
+    private float lastRawLevel = 0f;
+    private float currentAmplitude = 0f;
+    private float noiseFloor;
+    private float breathLevel = 0f;
+
     private float breathDuration = 0f;
     private bool isBreathing = false;
+    private float dropTimer = 0f;
     private float bestDuration = 0f;
+    private float sessionBest = 0f;
     private bool missionSuccess = false;
     private float gameTimer = 0f;
     private bool gameOver = false;
+    private float debugTimer = 0f;
 
     void Awake()
     {
         enabled = false;
         gameTimer = totalGameTime;
-        bestDuration = PlayerPrefs.GetFloat("BestBreathDuration", 0f);
+        noiseFloor = defaultNoiseFloor;
+        bestDuration = DataManager.Instance.GetBestScore("breathing");
     }
 
     void Start()
     {
+        StartMic();
+    }
+
+    void StartMic()
+    {
+        if (micStarted) return;
+        micStarted = true;
+
         if (Microphone.devices.Length > 0)
         {
             micDevice = Microphone.devices[0];
@@ -37,7 +66,28 @@ public class BreathingManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("마이크 없음!");
+            UnityEngine.Debug.Log("마이크 없음!");
+        }
+    }
+
+    public void BeginCalibration()
+    {
+        StartMic();
+        StartCoroutine(Calibrate());
+    }
+
+    IEnumerator Calibrate()
+    {
+        yield return new WaitForSecondsRealtime(0.4f);
+
+        float sum = 0f;
+        int count = 0;
+        while (!enabled)
+        {
+            sum += GetMicLevel();
+            count++;
+            noiseFloor = Mathf.Clamp(sum / count, 0.0005f, maxNoiseFloor);
+            yield return null;
         }
     }
 
@@ -50,63 +100,86 @@ public class BreathingManager : MonoBehaviour
         {
             gameTimer = 0f;
             gameOver = true;
-            SaveBest();
+            UpdateBest();
             return;
         }
 
-        currentAmplitude = GetMicAmplitude();
+        float raw = GetMicLevel();
+        currentAmplitude = Mathf.Lerp(currentAmplitude, raw, 1f - Mathf.Exp(-smoothing * Time.deltaTime));
 
-        if (currentAmplitude >= minAmplitude && currentAmplitude <= maxAmplitude)
+        float floor = noiseFloor * noiseMultiplier;
+        float breathStart = floor + breathMargin;
+        float greenStart = floor + greenMargin;
+
+        breathLevel = Mathf.InverseLerp(breathStart, greenStart, currentAmplitude);
+        bool inZone = currentAmplitude >= greenStart && currentAmplitude <= maxAmplitude;
+
+        if (inZone)
         {
             isBreathing = true;
+            dropTimer = 0f;
             breathDuration += Time.deltaTime;
 
             if (breathDuration >= successDuration)
             {
+                breathDuration = successDuration;
                 missionSuccess = true;
-                SaveBest();
+                UpdateBest();
             }
         }
         else if (isBreathing)
         {
-            SaveBest();
-            breathDuration = 0f;
-            isBreathing = false;
+            dropTimer += Time.deltaTime;
+            if (dropTimer >= dropGraceTime)
+            {
+                UpdateBest();
+                breathDuration = 0f;
+                isBreathing = false;
+            }
         }
-    }
 
-    void SaveBest()
-    {
-        if (breathDuration > bestDuration)
+        if (showDebugLog)
         {
-            bestDuration = breathDuration;
-            PlayerPrefs.SetFloat("BestBreathDuration", bestDuration);
-            PlayerPrefs.Save();
+            debugTimer += Time.deltaTime;
+            if (debugTimer >= 0.5f)
+            {
+                debugTimer = 0f;
+                UnityEngine.Debug.Log($"소리={currentAmplitude:F4} 소음기준={noiseFloor:F4} 부풀기시작={breathStart:F4} 초록시작={greenStart:F4}");
+            }
         }
     }
 
-    float GetMicAmplitude()
+    void UpdateBest()
+    {
+        if (breathDuration > sessionBest) sessionBest = breathDuration;
+        if (breathDuration > bestDuration) bestDuration = breathDuration;
+    }
+
+    float GetMicLevel()
     {
         if (micClip == null) return 0f;
 
-        float[] samples = new float[1024];
         int position = Microphone.GetPosition(micDevice);
-        if (position < 1024) return 0f;
+        if (position < SampleWindow) return lastRawLevel;
 
-        micClip.GetData(samples, position - 1024);
+        micClip.GetData(samples, position - SampleWindow);
 
-        float maxVal = 0f;
-        foreach (float s in samples)
-        {
-            float abs = Mathf.Abs(s);
-            if (abs > maxVal) maxVal = abs;
-        }
-        return maxVal;
+        float sum = 0f;
+        for (int i = 0; i < SampleWindow; i++)
+            sum += samples[i] * samples[i];
+
+        lastRawLevel = Mathf.Sqrt(sum / SampleWindow);
+        return lastRawLevel;
     }
 
     public float GetCurrentAmplitude() => currentAmplitude;
+    public float GetBreathLevel() => breathLevel;
+    public float GetNoiseFloor() => noiseFloor;
     public float GetBreathDuration() => breathDuration;
+    public float GetHoldRemaining() => Mathf.Max(0f, successDuration - breathDuration);
     public float GetBestDuration() => bestDuration;
+    public float GetSessionBest() => sessionBest;
+    public float GetPlaySeconds() => totalGameTime - gameTimer;
     public bool IsInGreenZone() => isBreathing;
     public bool IsMissionSuccess() => missionSuccess;
     public float GetSuccessDuration() => successDuration;

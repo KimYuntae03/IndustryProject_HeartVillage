@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
 using System.Collections;
 
@@ -9,13 +8,9 @@ public class BreathingCountdownManager : MonoBehaviour
     public TMP_Text countdownText;
     public BreathingManager breathingManager;
 
-    void Start()
-    {
-        breathingManager.enabled = false;
-    }
-
     public void StartCountdown()
     {
+        breathingManager.BeginCalibration();
         StartCoroutine(CountdownCoroutine());
     }
 
