@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Globalization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -13,8 +14,11 @@ public class ExerciseDistanceTracker : MonoBehaviour
     [SerializeField] private TMP_Text distanceText;
 
     [Header("거리 계산")]
+    [Tooltip("저장한 신장이 없을 때 사용하는 한 걸음 길이(m)")]
     [SerializeField, Min(0.1f)]
     private float strideLengthMeters = 0.7f;
+    private const float StepLengthToHeightRatio = 0.37f;
+    private float sessionStepLengthMeters;
 
     private StepCounter stepCounter;
     private Coroutine prepareCoroutine;
@@ -91,10 +95,19 @@ public class ExerciseDistanceTracker : MonoBehaviour
             currentStepCount - startStepCount
         );
 
-        // 걸음 수 × 평균 보폭으로 실제 이동 거리 계산
-        DistanceMeters =
-            SessionStepCount * strideLengthMeters;
+        DistanceMeters = SessionStepCount * sessionStepLengthMeters;
+    }
 
+    private float GetStepLengthMeters()
+    {
+        string height = LocalPlayerProfile.Load()?.heightCm;
+        if (float.TryParse(height?.Trim().Replace(',', '.'), NumberStyles.AllowDecimalPoint,
+                CultureInfo.InvariantCulture, out float heightCm) && heightCm > 0f && !float.IsInfinity(heightCm))
+        {
+            return heightCm / 100f * StepLengthToHeightRatio;
+        }
+
+        return strideLengthMeters;
     }
 
     private void RequestPermissionAndPrepareSensor()
@@ -178,6 +191,7 @@ public class ExerciseDistanceTracker : MonoBehaviour
 
     public void StartMeasurement()
     {
+        sessionStepLengthMeters = GetStepLengthMeters();
         StopLocation();
         gps = new ExerciseGpsCheck();
         sessionSeconds = 0;

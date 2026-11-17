@@ -1761,6 +1761,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 14be4c9fbcad8af4d9c1d5932acc5a0d, type: 2}
   playerNameText: {fileID: 157354460}
   heartPointsText: {fileID: 928215082}
+  medicationButton: {fileID: 374538098}
+  medicationSlots:
+  - {fileID: 1677603881}
+  - {fileID: 1915998161}
+  - {fileID: 1622892504}
   placement: {fileID: 532880463}
 --- !u!4 &532880462
 Transform:
