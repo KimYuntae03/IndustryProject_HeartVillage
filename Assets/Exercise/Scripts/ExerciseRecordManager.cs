@@ -21,6 +21,7 @@ public class ExerciseRecordManager : MonoBehaviour
     public ExerciseDistanceCheck DistanceCheck { get; private set; }
     public bool HadPreviousRecord { get; private set; }
     public bool IsNewBestRecord { get; private set; }
+    public bool MeetsRewardDistanceRequirement { get; private set; }
 
     public float PreviousBestDistance { get; private set; }
     public float CurrentDistance { get; private set; }
@@ -46,20 +47,27 @@ public class ExerciseRecordManager : MonoBehaviour
 
         CurrentDistance =
             Mathf.Max(0f, distanceTracker.DistanceMeters);
-
-        HadPreviousRecord =
-            PlayerPrefs.GetInt(HasRecordKey, 0) == 1 && PlayerPrefs.HasKey(BestDistanceKey);
+        if (float.IsNaN(CurrentDistance) || float.IsInfinity(CurrentDistance)) CurrentDistance = 0f;
 
         PreviousBestDistance =
             PlayerPrefs.GetFloat(BestDistanceKey, 0f);
+        if (float.IsNaN(PreviousBestDistance) || float.IsInfinity(PreviousBestDistance))
+            PreviousBestDistance = 0f;
+
+        // A zero-distance record from an older save does not establish a walking baseline.
+        HadPreviousRecord = PlayerPrefs.GetInt(HasRecordKey, 0) == 1 &&
+            PlayerPrefs.HasKey(BestDistanceKey) && PreviousBestDistance > 0f;
+        MeetsRewardDistanceRequirement = CurrentDistance > 0f &&
+            (!HadPreviousRecord || CurrentDistance >= PreviousBestDistance * 0.5f);
 
         recordSavedThisSession = true;
         DistanceCheck = distanceTracker.DistanceCheck;
         UpdatedBestDistance = PreviousBestDistance;
         if (DistanceCheck == ExerciseDistanceCheck.Mismatch) return;
 
-        int reward = 10;
-        if (DistanceCheck == ExerciseDistanceCheck.Consistent)
+        var completedAt = System.DateTime.Now;
+        int reward = MeetsRewardDistanceRequirement ? 10 : 0;
+        if (DistanceCheck == ExerciseDistanceCheck.Consistent && CurrentDistance > 0f)
         {
             IsNewBestRecord = !HadPreviousRecord || CurrentDistance > PreviousBestDistance;
             if (IsNewBestRecord)
@@ -71,7 +79,17 @@ public class ExerciseRecordManager : MonoBehaviour
             PlayerPrefs.SetFloat(LastDistanceKey, CurrentDistance);
             PlayerPrefs.SetFloat(BestDistanceKey, UpdatedBestDistance);
         }
-        if (VillagePlayerData.AddHeartPoints(reward))
+        // Only the same GPS-confirmed distances accepted for records may establish accuracy.
+        // Inconclusive completion still counts as a recorded day, with accuracy unassessed.
+        HealthScoreData.RecordBest(HealthCategory.Exercise, completedAt,
+            DistanceCheck == ExerciseDistanceCheck.Consistent && HadPreviousRecord
+                ? HealthScoreRules.ExerciseAccuracy(CurrentDistance, PreviousBestDistance) : null);
+        if (reward == 0)
+        {
+            // Keep the completed session's score, but do not pay a distance-ineligible reward.
+            PlayerPrefs.Save();
+        }
+        else if (VillagePlayerData.AddHeartPoints(reward))
         {
             // 공용 지갑이 바뀐 기록 키와 하트 잔액을 PlayerPrefs에 함께 저장한다.
             AwardedHeartPoints = reward;

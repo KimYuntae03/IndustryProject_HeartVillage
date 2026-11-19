@@ -78,13 +78,26 @@ public class ExerciseResultUI : MonoBehaviour
                 "이전 최고 기록\n기록 없음";
         }
 
-        string reason = recordManager.DistanceCheck switch
+        if (!recordManager.MeetsRewardDistanceRequirement)
         {
-            ExerciseDistanceCheck.Mismatch => "걸음 거리와 위치 기록이 크게 달라요",
-            ExerciseDistanceCheck.Inconclusive => "거리 확인이 어려워 참여 보상만 지급해요",
-            _ => "운동 보상"
-        };
-        rewardText.text = $"{reason}\n+{recordManager.AwardedHeartPoints} 하트 포인트";
+            string message = recordManager.HadPreviousRecord
+                ? "이전 최고 기록의 50% 미만이에요."
+                : "아직 걸은 거리가 없어요.";
+            rewardText.text = $"보상 없음\n<size=80%>{message}\n다시 도전해보세요!</size>";
+        }
+        else
+        {
+            string reason = recordManager.DistanceCheck switch
+            {
+                ExerciseDistanceCheck.Mismatch => "걸음 거리와 위치 기록이 크게 달라요",
+                ExerciseDistanceCheck.Inconclusive => "거리 확인이 어려워 참여 보상만 지급해요",
+                _ => "운동 보상"
+            };
+            rewardText.text = recordManager.AwardedHeartPoints > 0
+                ? $"{reason}\n+{recordManager.AwardedHeartPoints} 하트 포인트"
+                : "보상 없음\n" + (recordManager.DistanceCheck == ExerciseDistanceCheck.Mismatch
+                    ? reason : "보상을 지급하지 못했어요.");
+        }
 
         // 반투명 배경을 먼저 표시
         resultRoot.SetActive(true);

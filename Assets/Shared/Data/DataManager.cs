@@ -13,6 +13,8 @@ public class DataManager : MonoBehaviour
         public float score;
         public float playSeconds;
         public string playedAt;
+        public bool hasHealthAccuracy;
+        public float healthAccuracy;
     }
 
     [Serializable]
@@ -72,6 +74,7 @@ public class DataManager : MonoBehaviour
 
     public SaveOutcome SaveResult(MinigameResult result)
     {
+        DateTime playedAt = DateTime.Now;
         float previousBest = GetBestScore(result.gameId);
         bool isNewRecord = result.score > previousBest;
         bool eligible = result.success || result.rewardOnFail;
@@ -86,10 +89,15 @@ public class DataManager : MonoBehaviour
             success = result.success,
             score = result.score,
             playSeconds = result.playSeconds,
-            playedAt = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")
+            playedAt = playedAt.ToString("yyyy-MM-ddTHH:mm:ss"),
+            hasHealthAccuracy = result.hasHealthAccuracy,
+            healthAccuracy = result.healthAccuracy
         });
         data.heartPoint += total;
         Save();
+        if (result.gameId == "breathing")
+            HealthScoreData.RecordBest(HealthCategory.Breathing, playedAt,
+                result.hasHealthAccuracy ? (double?)result.healthAccuracy : null);
         OnDataChanged?.Invoke();
 
         return new SaveOutcome
@@ -130,6 +138,7 @@ public class DataManager : MonoBehaviour
 
     public void ResetAll()
     {
+        HealthScoreData.ClearCategory(HealthCategory.Breathing);
         data = new SaveData();
         Save();
         OnDataChanged?.Invoke();
