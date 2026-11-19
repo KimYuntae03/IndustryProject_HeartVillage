@@ -26,6 +26,14 @@ public static class VillagePlayerData
     }
 
     [Serializable]
+    private class DietReward
+    {
+        public string date;
+        public long sodiumMg;
+        public int heartPoints;
+    }
+
+    [Serializable]
     private class SaveData
     {
         public string playerName = "플레이어";
@@ -33,6 +41,7 @@ public static class VillagePlayerData
         public bool starterGranted;
         public List<Stock> inventory = new();
         public List<Decoration> decorations = new();
+        public List<DietReward> dietRewards = new();
     }
 
     private static SaveData loaded;
@@ -64,6 +73,26 @@ public static class VillagePlayerData
         if (amount <= 0 || amount > int.MaxValue - Data.heartPoints) return false;
         Data.heartPoints += amount;
         Save();
+        return true;
+    }
+
+    public static bool IsDietFinalized(string date) =>
+        Data.dietRewards != null && Data.dietRewards.Exists(reward => reward.date == date);
+
+    public static bool TryGrantDietReward(string date, long sodiumMg, int dailyLimitMg, out int awardedPoints)
+    {
+        awardedPoints = 0;
+        if (date != DateTime.Now.ToString("yyyy-MM-dd") || sodiumMg < 0 ||
+            dailyLimitMg <= 0 || IsDietFinalized(date)) return false;
+        int amount = sodiumMg <= dailyLimitMg ? 15 : 10;
+        if (amount > int.MaxValue - Data.heartPoints) return false;
+
+        Data.dietRewards ??= new List<DietReward>();
+        Data.dietRewards.Add(new DietReward { date = date, sodiumMg = sodiumMg, heartPoints = amount });
+        Data.heartPoints += amount;
+        // Keep the receipt and balance in the same save to prevent duplicate payouts.
+        Save();
+        awardedPoints = amount;
         return true;
     }
 
