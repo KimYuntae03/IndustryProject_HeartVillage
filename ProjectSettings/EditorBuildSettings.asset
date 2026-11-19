@@ -18,7 +18,7 @@ EditorBuildSettings:
     path: Assets/Breathing/Scenes/BreathingMinigame.unity
     guid: 0d70ce698e4a361408cad9ad056bcacf
   - enabled: 1
-    path: Assets/Scenes/DietMinigame.unity
+    path: Assets/Diet/Scenes/DietMinigame.unity
     guid: 7c6acd2309db78448991854b754d4311
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
