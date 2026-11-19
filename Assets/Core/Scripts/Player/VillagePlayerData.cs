@@ -92,6 +92,9 @@ public static class VillagePlayerData
         Data.heartPoints += amount;
         // Keep the receipt and balance in the same save to prevent duplicate payouts.
         Save();
+        HealthScoreData.RecordDaily(HealthCategory.Diet,
+            DateTime.ParseExact(date, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+            HealthScoreRules.DietAccuracy(sodiumMg));
         awardedPoints = amount;
         return true;
     }

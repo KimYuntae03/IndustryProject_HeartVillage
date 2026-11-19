@@ -48,6 +48,7 @@ public sealed class MedicationCheckSlot : MonoBehaviour
         {
             PlayerPrefs.SetInt(recordKey, today);
             PlayerPrefs.Save();
+            HealthScoreData.RefreshMedication(now);
         }
         Refresh(now);
     }

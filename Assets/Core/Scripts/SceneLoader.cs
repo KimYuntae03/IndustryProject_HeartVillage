@@ -13,6 +13,7 @@ public class SceneLoader : MonoBehaviour
     [SerializeField, Min(0f)] private float fadeDuration = 0.35f;
 
     private bool isLoading;
+    private Vector3? coreReturnPosition;
 
     private void Awake()
     {
@@ -65,12 +66,44 @@ public class SceneLoader : MonoBehaviour
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(sceneName) || !Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            Debug.LogError($"씬을 불러올 수 없습니다. 빌드 설정을 확인해 주세요: {sceneName}");
+            return;
+        }
+
         StartCoroutine(LoadSceneRoutine(sceneName));
+    }
+
+    // Consume once when the returning Core player is created. A fresh game uses its normal spawn.
+    public bool TryConsumeCoreReturnPosition(out Vector3 position)
+    {
+        position = coreReturnPosition.GetValueOrDefault();
+        bool hasPosition = coreReturnPosition.HasValue;
+        coreReturnPosition = null;
+        return hasPosition;
+    }
+
+    private PlayerController SaveCoreReturnPosition(string destination)
+    {
+        var source = SceneManager.GetActiveScene();
+        bool isMinigame = destination == "BreathingMinigame" ||
+            destination == "ExerciseMinigame" || destination == "DietMinigame";
+        if (source.name != "CoreGameplay" || !isMinigame) return null;
+
+        var player = FindFirstObjectByType<PlayerController>();
+        if (player == null || player.gameObject.scene != source) return null;
+
+        coreReturnPosition = player.transform.position;
+        // Do not let input move the player away from the saved position during the fade.
+        player.SetCanMove(false);
+        return player;
     }
 
     private IEnumerator LoadSceneRoutine(string sceneName)
     {
         isLoading = true;
+        var leavingPlayer = SaveCoreReturnPosition(sceneName);
 
         // 일시정지 상태로 다음 씬에 넘어가지 않도록 초기화
         Time.timeScale = 1f;
@@ -87,6 +120,12 @@ public class SceneLoader : MonoBehaviour
         if (loadOperation == null)
         {
             Debug.LogError($"씬을 불러오지 못했습니다: {sceneName}");
+
+            if (leavingPlayer != null)
+            {
+                coreReturnPosition = null;
+                leavingPlayer.SetCanMove(true);
+            }
 
             if (fadeCanvasGroup != null)
             {

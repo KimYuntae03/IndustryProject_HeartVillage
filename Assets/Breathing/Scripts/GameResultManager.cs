@@ -45,6 +45,8 @@ public class GameResultManager : MonoBehaviour
         success = breathingManager.IsMissionSuccess();
         float goal = breathingManager.GetSuccessDuration();
 
+        double? healthAccuracy = HealthScoreRules.BreathingAccuracy(breathingManager.GetSessionBest(), goal);
+
         SaveOutcome outcome = DataManager.Instance.SaveResult(new MinigameResult
         {
             gameId = "breathing",
@@ -52,6 +54,8 @@ public class GameResultManager : MonoBehaviour
             success = success,
             score = breathingManager.GetSessionBest(),
             playSeconds = breathingManager.GetPlaySeconds(),
+            hasHealthAccuracy = healthAccuracy.HasValue,
+            healthAccuracy = (float)(healthAccuracy ?? 0d),
             allowBonus = false
         });
 

@@ -36,6 +36,14 @@ public class PlayerController : MonoBehaviour
         animator = GetComponent<Animator>();
         playerInput = GetComponent<PlayerInput>();
 
+        if (gameObject.scene.name == "CoreGameplay" && SceneLoader.Instance != null &&
+            SceneLoader.Instance.TryConsumeCoreReturnPosition(out Vector3 returnPosition))
+        {
+            // Restore both the visual Transform and the physics body before the first frame.
+            transform.position = returnPosition;
+            rb.position = (Vector2)returnPosition;
+        }
+
         // 게임 시작 시 아래쪽을 바라보는 Idle 애니메이션이 재생되게 초기화
         animator.SetFloat(MoveXHash, 0f);
         animator.SetFloat(MoveYHash, -1f);

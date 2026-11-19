@@ -22,6 +22,15 @@ public class CameraFollow : MonoBehaviour
         smoothedPosition = transform.position;
     }
 
+    private void Start()
+    {
+        if (target == null) return;
+        // Player.Awake has already restored the Core return position.
+        smoothedPosition = target.position + offset;
+        velocity = Vector3.zero;
+        transform.position = smoothedPosition;
+    }
+
     private void LateUpdate()
     {
         if (target == null)
