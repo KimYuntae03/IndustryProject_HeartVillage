@@ -6,7 +6,7 @@ using UnityEngine;
 
 public sealed class MedicationReminders : MonoBehaviour
 {
-    private const string Message = "약 드실 시간이에요!";
+    private const string Message = "약 드실 시간이에요! 💊";
     private const string Channel = "medication";
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]

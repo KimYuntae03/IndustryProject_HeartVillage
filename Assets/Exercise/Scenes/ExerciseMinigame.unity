@@ -2598,8 +2598,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ExerciseRouteMover
   routeRoot: {fileID: 909994338}
   distanceTracker: {fileID: 1125894217}
-  worldUnitsPerMeter: 0.1
-  moveSpeed: 0.8
+  worldUnitsPerMeter: 0.48
+  moveSpeed: 3.84
+  movementSmoothTime: 0.6
   loopRoute: 1
   walkAnimationHoldTime: 2
 --- !u!4 &1880847188 stripped

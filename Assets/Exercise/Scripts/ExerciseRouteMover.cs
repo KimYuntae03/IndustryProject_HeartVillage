@@ -15,11 +15,15 @@ public class ExerciseRouteMover : MonoBehaviour
     [Header("걸음 연동 설정")]
     [Tooltip("실제 1m를 게임 안에서 몇 Unit으로 표현할지 설정")]
     [SerializeField, Min(0.001f)]
-    private float worldUnitsPerMeter = 0.1f;
+    private float worldUnitsPerMeter = 0.48f;
 
     [Tooltip("측정된 거리만큼 플레이어가 따라가는 최대 속도")]
     [SerializeField, Min(0f)]
-    private float moveSpeed = 1f;
+    private float moveSpeed = 3.84f;
+
+    [Tooltip("걸음마다 증가하는 거리를 부드럽게 따라가는 시간(초)")]
+    [SerializeField, Min(0.05f)]
+    private float movementSmoothTime = 0.6f;
 
     [SerializeField]
     private bool loopRoute = true;
@@ -49,6 +53,20 @@ public class ExerciseRouteMover : MonoBehaviour
 
     // 실제 거리값을 바탕으로 게임 안에서 이동한 누적 거리
     private float traveledRouteDistance;
+    private float routeVelocity;
+
+#if UNITY_EDITOR
+    private bool editorWalkingPreview;
+    private float editorPreviewSeconds;
+
+    // 에디터에서만 가상 걸음으로 실제 이동 로직을 확인한다. 측정/기록에는 전달하지 않는다.
+    public void StartEditorWalkingPreview()
+    {
+        StartWalking();
+        editorPreviewSeconds = 0f;
+        editorWalkingPreview = true;
+    }
+#endif
 
     private static readonly int MoveXHash =
         Animator.StringToHash("MoveX");
@@ -88,15 +106,27 @@ public class ExerciseRouteMover : MonoBehaviour
             return;
         }
 
+#if UNITY_EDITOR
+        if (editorWalkingPreview)
+        {
+            editorPreviewSeconds += Time.fixedDeltaTime;
+            FollowMeasuredDistance(Mathf.Floor(editorPreviewSeconds / 0.5f) * 0.7f);
+            return;
+        }
+#endif
+
         if (!distanceTracker.IsMeasuring)
         {
+            routeVelocity = 0f;
             SetIdleAnimation();
             return;
         }
 
-        float measuredDistance =
-            distanceTracker.DistanceMeters;
+        FollowMeasuredDistance(distanceTracker.DistanceMeters);
+    }
 
+    private void FollowMeasuredDistance(float measuredDistance)
+    {
         // 실제 이동 거리가 증가하면 최근 걸음 감지 시간을 갱신
         if (measuredDistance >
             lastMeasuredDistance + 0.001f)
@@ -121,14 +151,25 @@ public class ExerciseRouteMover : MonoBehaviour
         // 일정 시간 동안 걷기 애니메이션을 유지
         if (remainingDistance <= 0.0001f)
         {
+            routeVelocity = 0f;
             UpdateRecentWalkingAnimation();
             return;
         }
 
-        float movementAmount = Mathf.Min(
-            moveSpeed * Time.fixedDeltaTime,
-            remainingDistance
+        // 센서의 계단식 거리 증가를 완만한 이동으로 바꾼다.
+        // 측정 거리 자체는 수정하지 않고 화면상의 경로 이동만 보간한다.
+        float nextRouteDistance = Mathf.SmoothDamp(
+            traveledRouteDistance,
+            targetRouteDistance,
+            ref routeVelocity,
+            movementSmoothTime,
+            moveSpeed,
+            Time.fixedDeltaTime
         );
+        float movementAmount = Mathf.Clamp(
+            nextRouteDistance - traveledRouteDistance,
+            0f,
+            Mathf.Min(remainingDistance, moveSpeed * Time.fixedDeltaTime));
 
         MoveToNextPoint(movementAmount);
     }
@@ -176,6 +217,7 @@ public class ExerciseRouteMover : MonoBehaviour
 
         targetPointIndex = 1;
         traveledRouteDistance = 0f;
+        routeVelocity = 0f;
         isWalking = false;
 
         SetIdleAnimation();
@@ -202,6 +244,7 @@ public class ExerciseRouteMover : MonoBehaviour
 
         targetPointIndex = 1;
         traveledRouteDistance = 0f;
+        routeVelocity = 0f;
         lastMeasuredDistance = distanceTracker.DistanceMeters;
 
         lastDistanceIncreaseTime = float.NegativeInfinity;
@@ -212,55 +255,54 @@ public class ExerciseRouteMover : MonoBehaviour
 
     public void StopWalking()
     {
+#if UNITY_EDITOR
+        editorWalkingPreview = false;
+#endif
         isWalking = false;
+        routeVelocity = 0f;
         SetIdleAnimation();
     }
 
     private void MoveToNextPoint(float movementAmount)
     {
-        Vector2 currentPosition = rb.position;
-        Vector2 targetPosition =
-            routePoints[targetPointIndex].position;
+        Vector2 nextPosition = rb.position;
+        Vector2 facingDirection = Vector2.zero;
+        int visitedPoints = 0;
 
-        // 이미 포인트에 도착한 상태면 다음 포인트로 변경
-        if (Vector2.Distance(
-                currentPosition,
-                targetPosition
-            ) <= 0.001f)
+        // 모퉁이에 도착해도 남은 이동량은 같은 물리 프레임에 이어서 사용한다.
+        // 겹치는 경로 포인트가 있어도 무한 반복하지 않도록 순회 횟수를 제한한다.
+        while (movementAmount > 0f && isWalking && visitedPoints < routePoints.Count)
         {
-            GoToFollowingPoint();
-            return;
+            Vector2 targetPosition = routePoints[targetPointIndex].position;
+            Vector2 offset = targetPosition - nextPosition;
+            float distanceToPoint = offset.magnitude;
+            if (distanceToPoint <= 0.00001f)
+            {
+                GoToFollowingPoint();
+                visitedPoints++;
+                continue;
+            }
+
+            float segmentMovement = Mathf.Min(movementAmount, distanceToPoint);
+            facingDirection = offset / distanceToPoint;
+            nextPosition = Vector2.MoveTowards(nextPosition, targetPosition, segmentMovement);
+            traveledRouteDistance += segmentMovement;
+            movementAmount -= segmentMovement;
+
+            if (segmentMovement >= distanceToPoint)
+            {
+                GoToFollowingPoint();
+                visitedPoints++;
+            }
         }
-
-        Vector2 nextPosition = Vector2.MoveTowards(
-            currentPosition,
-            targetPosition,
-            movementAmount
-        );
-
-        Vector2 moveDirection =
-            nextPosition - currentPosition;
-
-        // 이번 프레임에서 실제로 이동한 거리
-        float actualMovement = Vector2.Distance(
-            currentPosition,
-            nextPosition
-        );
 
         rb.MovePosition(nextPosition);
-
-        traveledRouteDistance += actualMovement;
-
-        UpdateAnimation(moveDirection);
-
-        // 목표 포인트에 도착하면 다음 포인트로 변경
-        if (Vector2.Distance(
-                nextPosition,
-                targetPosition
-            ) <= 0.01f)
-        {
-            GoToFollowingPoint();
-        }
+        if (!isWalking)
+            SetIdleAnimation();
+        else if (facingDirection != Vector2.zero)
+            UpdateAnimation(facingDirection);
+        else
+            UpdateRecentWalkingAnimation();
     }
 
     private void GoToFollowingPoint()

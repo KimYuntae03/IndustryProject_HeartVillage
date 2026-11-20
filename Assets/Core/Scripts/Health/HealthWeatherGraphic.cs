@@ -39,7 +39,7 @@ public sealed class HealthWeatherGraphic : UnityEngine.UI.MaskableGraphic
     private Color32 Pixel(int x, int y)
     {
         Color32 result = new Color32(0, 0, 0, 0);
-        if (weather == HealthWeather.Sunny || weather == HealthWeather.Clear)
+        if (weather == HealthWeather.Sunny || weather == HealthWeather.Fair)
         {
             int cx = weather == HealthWeather.Sunny ? 10 : 13;
             int cy = weather == HealthWeather.Sunny ? 10 : 14;

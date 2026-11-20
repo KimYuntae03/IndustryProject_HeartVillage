@@ -6829,6 +6829,10 @@ MonoBehaviour:
   - {fileID: 1928152042}
   overallLabel: {fileID: 617076753}
   weatherPlaceholder: {fileID: 980944808}
+  rainIcon: {fileID: 21300000, guid: c6dc70ada5fdf77458e241d140d7d4aa, type: 3}
+  cloudyIcon: {fileID: 21300000, guid: 8fbc6499530d4ec42b03d423b60eec3e, type: 3}
+  fairIcon: {fileID: 21300000, guid: c88c42f1e3e924342a1f69c753d60505, type: 3}
+  sunnyIcon: {fileID: 21300000, guid: fe69b352fcafb564eb107ebbdc02442e, type: 3}
 --- !u!1 &1484850764
 GameObject:
   m_ObjectHideFlags: 0

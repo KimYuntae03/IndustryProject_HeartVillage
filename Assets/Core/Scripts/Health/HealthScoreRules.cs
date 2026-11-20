@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 
 public enum HealthCategory { Breathing, Exercise, Medication, Diet }
-public enum HealthWeather { Sunny, Clear, Cloudy, Rainy }
+public enum HealthWeather { Sunny, Fair, Cloudy, Rainy }
 
 [Serializable]
 public sealed class HealthDailyRecord
@@ -37,7 +37,9 @@ public sealed class HealthScoreSnapshot
     public readonly HealthCategoryScore[] Categories;
     public double HealthIndex => (Categories[0].Score + Categories[1].Score +
         Categories[2].Score + Categories[3].Score) / 4d;
-    public HealthWeather Weather => HealthScoreRules.Weather(HealthIndex);
+    public int DisplayedHealthIndex => (int)Math.Round(HealthScoreRules.ClampAccuracy(HealthIndex),
+        MidpointRounding.AwayFromZero);
+    public HealthWeather Weather => HealthScoreRules.Weather(DisplayedHealthIndex);
 
     public HealthScoreSnapshot(DateTime date, HealthCategoryScore[] categories)
     {
@@ -69,8 +71,8 @@ public static class HealthScoreRules
     public static double? MedicationAccuracy(int taken, int scheduled) => scheduled <= 0
         ? (double?)null : Math.Floor(Math.Max(0, Math.Min(taken, scheduled)) * 100d / scheduled);
 
-    public static HealthWeather Weather(double score) => score >= 90d ? HealthWeather.Sunny :
-        score >= 70d ? HealthWeather.Clear : score >= 50d ? HealthWeather.Cloudy : HealthWeather.Rainy;
+    public static HealthWeather Weather(double score) => score <= 25d ? HealthWeather.Rainy :
+        score <= 50d ? HealthWeather.Cloudy : score <= 75d ? HealthWeather.Fair : HealthWeather.Sunny;
 
     public static HealthCategoryScore Calculate(HealthCategory category, DateTime today,
         IReadOnlyList<HealthDailyRecord> records, double? unrecordedAccuracy = null)

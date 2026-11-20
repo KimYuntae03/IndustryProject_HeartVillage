@@ -9,6 +9,10 @@ public sealed class HealthScoreUI : MonoBehaviour
     [SerializeField] private UnityEngine.UI.Image[] categoryFrames;
     [SerializeField] private TMP_Text overallLabel;
     [SerializeField] private UnityEngine.UI.Image weatherPlaceholder;
+    [SerializeField] private Sprite rainIcon;
+    [SerializeField] private Sprite cloudyIcon;
+    [SerializeField] private Sprite fairIcon;
+    [SerializeField] private Sprite sunnyIcon;
 
     // UI row order is independent of the category order used by the score calculator.
     private readonly HealthCategory[] rowCategories =
@@ -66,6 +70,10 @@ public sealed class HealthScoreUI : MonoBehaviour
         }
 
         weatherPlaceholder.enabled = false;
+        weatherPlaceholder.type = UnityEngine.UI.Image.Type.Simple;
+        weatherPlaceholder.preserveAspect = true;
+        weatherPlaceholder.color = Color.white;
+        weatherPlaceholder.raycastTarget = false;
         Style(overallLabel, 50.4f, TextAlignmentOptions.Center);
         overallLabel.rectTransform.sizeDelta = new Vector2(470, 100);
         overallLabel.rectTransform.anchoredPosition = new Vector2(0, -200);
@@ -109,7 +117,15 @@ public sealed class HealthScoreUI : MonoBehaviour
             categoryLabels[i].text = $"{names[i]}: {score.Score:0} 점";
             gauges[i].SetScore(score.Score, gaugeColors[i]);
         }
-        overallLabel.text = $"통합점수: {snapshot.HealthIndex:0} 점";
+        overallLabel.text = $"통합점수: {snapshot.DisplayedHealthIndex} 점";
+        weatherPlaceholder.sprite = snapshot.Weather switch
+        {
+            HealthWeather.Rainy => rainIcon,
+            HealthWeather.Cloudy => cloudyIcon,
+            HealthWeather.Fair => fairIcon,
+            _ => sunnyIcon
+        };
+        weatherPlaceholder.enabled = weatherPlaceholder.sprite != null;
     }
 
     private static void Style(TMP_Text label, float size, TextAlignmentOptions alignment)
